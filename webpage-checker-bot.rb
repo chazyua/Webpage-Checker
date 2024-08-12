@@ -1,0 +1,49 @@
+require 'net/http'
+require 'digest'
+require 'fileutils'
+require 'telegram/bot'
+require 'dotenv/load'
+
+# Configuration
+URL = 'https://www.google.com'
+HASH_FILE = './last_hash.txt'
+TELEGRAM_TOKEN = ENV['TELEGRAM_TOKEN']
+CHAT_ID = ENV['CHAT_ID']
+
+def get_website_content(url)
+  uri = URI(url)
+  response = Net::HTTP.get(uri)
+  response
+end
+
+def calculate_hash(content)
+  Digest::SHA256.hexdigest(content)
+end
+
+def read_last_hash(file_path)
+  return nil unless File.exist?(file_path)
+  File.read(file_path).strip
+end
+
+def write_current_hash(file_path, hash)
+  File.write(file_path, hash)
+end
+
+def send_telegram_message(token, chat_id, message)
+  Telegram::Bot::Client.run(token) do |bot|
+    bot.api.send_message(chat_id: chat_id, text: message)
+  end
+end
+
+def main
+  content = get_website_content(URL)
+  current_hash = calculate_hash(content)
+  last_hash = read_last_hash(HASH_FILE)
+
+  if current_hash != last_hash
+    send_telegram_message(TELEGRAM_TOKEN, CHAT_ID, "The content of #{URL} has changed.")
+    write_current_hash(HASH_FILE, current_hash)
+  end
+end
+
+main if __FILE__ == $PROGRAM_NAME
