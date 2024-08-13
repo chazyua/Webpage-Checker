@@ -1,4 +1,4 @@
 .env
 
-# hash file
-last_hash.txt
+# hashes folder
+/hashes
