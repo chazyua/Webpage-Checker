@@ -4,16 +4,28 @@ require 'fileutils'
 require 'telegram/bot'
 require 'dotenv/load'
 
+def sanitize_url(url)
+  sanitized = url.gsub(/\\/, '').gsub(/"/, '').gsub(/^\s+|\s+$/, '')
+  sanitized.strip if sanitized
+end
+
 # Configuration
-URLS = ['https://bing.com', 'https://google.com']
+URLS = sanitize_url(ENV['URLS']).split(',').map(&:strip)
 HASH_FILE = './hashes/last_hash.txt'
 TELEGRAM_TOKEN = ENV['TELEGRAM_TOKEN']
 CHAT_ID = ENV['CHAT_ID']
 
 def get_website_content(url)
-  uri = URI(url)
-  response = Net::HTTP.get(uri)
-  response
+  puts "Attempting to fetch content from: #{url}"
+  begin
+    uri = URI(url.strip)
+    response = Net::HTTP.get(uri)
+    puts "Successfully fetched content from #{uri}"
+    response
+  rescue => e
+    puts "Failed to fetch content from #{url}: #{e.message}"
+    nil
+  end
 end
 
 def calculate_hash(content)
